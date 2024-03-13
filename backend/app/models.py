@@ -1,4 +1,8 @@
 from sqlmodel import Field, Relationship, SQLModel
+from typing import Optional
+from datetime import datetime
+
+from .enums import FinancingType
 
 
 # Shared properties
@@ -90,6 +94,89 @@ class ItemOut(ItemBase):
 class ItemsOut(SQLModel):
     data: list[ItemOut]
     count: int
+    
+# ------------------------ Organization Models  ------------------------------------
+    
+class OrganizationBase(SQLModel):
+    name: str
+
+class OrganizationCreate(OrganizationBase):
+    pass
+
+class OrganizationUpdate(OrganizationBase):
+    pass
+
+class OrganizationOut(OrganizationBase):
+    id: int
+    pass
+
+class OrganizationsOut(SQLModel):
+    data: list[OrganizationOut]
+
+
+class Organization(OrganizationBase, table=True):
+    id: int = Field(default=None, primary_key=True)
+    name: str
+    owner_id: int | None = Field(default=None, foreign_key="user.id", nullable=False)
+    #Non DB fields Useful for Pydantic/FastAPI/SQLModel    
+    # addresses: list[Address] = Relationship(back_populates="organization")
+    # emails: list[Email] = Relationship(back_populates="organization")
+    # phones: list[Phone] = Relationship(back_populates="organization")
+    # salespeople: list[SalesPerson] = Relationship(back_populates="organization")
+    # owned_vehicles: list[Vehicle] = Relationship(back_populates="organization")
+    
+
+# class OrganizationReadwithSalesPeople(OrganizationRead):
+#     salespeople: list["SalesPersonRead"] = []
+
+
+
+# ------------------------ Vehicle Models  ------------------------------------
+    
+    
+
+class VehicleBase(SQLModel):
+    vin: str 
+    financing_type: Optional[FinancingType] = None
+    make: Optional[str] = None
+    model: Optional[str] = None
+    year: Optional[int] = None
+    color: Optional[str] = None
+    mileage: Optional[int] = None
+    price: Optional[float] = None
+    msrp: Optional[float] = None
+    has_lien: Optional[bool] = None
+
+
+class VehicleCreate(ItemBase):
+    pass
+
+class VehicleUpdate(ItemBase):
+    pass
+
+class VehicleOut(VehicleBase):
+    pass
+
+class VehiclesOut(SQLModel):
+    data: list[VehicleOut]
+    count: int
+
+# Database model
+class Vehicle(VehicleBase, table=True):
+    id: Optional[int]= Field(default=None, primary_key=True)
+    owner_id: int | None = Field(default=None, foreign_key="user.id", nullable=False)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    
+    # prospect_id: Optional[int] = Field(default=None, foreign_key="prospect.id")
+    # prospect: Optional[Prospect] = Relationship(back_populates="owned_vehicles")
+   
+    # organization_id: Optional[int] = Field(default=None, foreign_key="organization.id")
+    # organization: Optional[Organization] = Relationship(back_populates="owned_vehicles")
+    
+    # activity_id: Optional[int] = Field(default=None, foreign_key="activity.id")
+    # activity: Optional[Activity] = Relationship(back_populates="recommended_vehicle")
+
 
 
 # Generic message

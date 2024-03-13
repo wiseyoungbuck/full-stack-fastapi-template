@@ -3,7 +3,15 @@ from typing import Any
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
-from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
+from app.models import (
+    Item,
+    ItemCreate,
+    Organization,
+    OrganizationCreate,
+    User,
+    UserCreate,
+    UserUpdate,
+)
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -14,6 +22,14 @@ def create_user(*, session: Session, user_create: UserCreate) -> User:
     session.commit()
     session.refresh(db_obj)
     return db_obj
+
+
+def create_organization(*, session: Session, org_in: OrganizationCreate) -> Organization:
+        db_org = Organization.model_validate(org_in)
+        session.add(db_org)
+        session.commit()
+        session.refresh(db_org)
+        return db_org
 
 
 def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
