@@ -4,8 +4,6 @@ from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
 from app.models import (
-    Item,
-    ItemCreate,
     Organization,
     OrganizationCreate,
     User,
@@ -27,12 +25,17 @@ def create_user(*, session: Session, user_create: UserCreate) -> User:
     return db_obj
 
 
-def create_organization(*, session: Session, org_in: OrganizationCreate) -> Organization:
-        db_org = Organization.model_validate(org_in)
-        session.add(db_org)
-        session.commit()
-        session.refresh(db_org)
-        return db_org
+# def create_organization(*, session: Session, id: int) -> Organization:
+#         db_org = Organization.model_validate(org_in)
+#         session.add(db_org)
+#         session.commit()
+#         session.refresh(db_org)
+#         return db_org
+    
+def get_organization_by_id(*, session: Session, id: int) -> Organization | None:
+    statement = select(Organization).where(Organization.id == id)
+    db_org: Organization | None = session.exec(statement).first()
+    return db_org
 
 
 def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
@@ -62,14 +65,6 @@ def authenticate(*, session: Session, email: str, password: str) -> User | None:
     if not verify_password(password, db_user.hashed_password):
         return None
     return db_user
-
-
-def create_item(*, session: Session, item_in: ItemCreate, owner_id: int) -> Item:
-    db_item = Item.model_validate(item_in, update={"owner_id": owner_id})
-    session.add(db_item)
-    session.commit()
-    session.refresh(db_item)
-    return db_item
 
 def create_vehicle(*, session: Session, vehicle_in: VehicleCreate, owner_id: int) -> Vehicle:
     db_vehicle: Vehicle = Vehicle.model_validate(vehicle_in, update={"owner_id": owner_id})

@@ -5,7 +5,7 @@ from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app import crud
-from app.models import Vehicle, VehicleCreate, VehicleOut, VehiclesOut, VehicleUpdate, Message, User
+from app.models import Vehicle, VehicleCreate, VehicleOut, VehiclesOut, VehicleUpdate, Message, User, Organization
 
 router = APIRouter()
 
@@ -61,18 +61,25 @@ def create_vehicle(
     """
     Create new vehicle.
     """
-    vehicle: Vehicle | None = crud.get_vehicle_by_vin(session=session, vin=vehicle_in.vin)
-    user: User = crud.get_user_by_email(session=session, email=current_user.email)
-    if vehicle is not None:
-        raise HTTPException(status_code=400, detail=f"Vehicle with VIN {vehicle_in.vin} already exists")
-   
-    if current_user is None:
+    user: User | None = crud.get_user_by_email(session=session, email=current_user.email)
+    if user is None:
         raise HTTPException(status_code=400, detail="User not found")
     
+    vehicle: Vehicle | None = crud.get_vehicle_by_vin(session=session, vin=vehicle_in.vin)
     
-    vehicle: Vehicle = crud.create_vehicle(session=session, vehicle_in=vehicle_in, owner_id=user.id)
+    if vehicle_in.organization_id is not None:
+        organization: Organization | None = crud.get_organization_by_id(session=session, id=vehicle_in.organization_id)
+        if organization is None:
+            raise HTTPException(status_code=400, detail=f"Organization with ID {vehicle_in.organization_id} not found")
+    else:
+        organization = None
     
-    return vehicle
+    if vehicle is not None:
+        raise HTTPException(status_code=400, detail=f"Vehicle with VIN {vehicle_in.vin} already exists")
+    else:
+        vehicle = crud.create_vehicle(session=session, vehicle_in=vehicle_in, owner_id=user.id)
+    
+        return vehicle
 
 
 @router.put("/{id}", response_model=VehicleOut)

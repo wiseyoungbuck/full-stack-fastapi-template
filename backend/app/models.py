@@ -2,7 +2,9 @@ from sqlmodel import Field, Relationship, SQLModel
 from typing import Optional
 from datetime import datetime
 
-from .enums import FinancingType
+from .enums import FinancingType, PhoneType
+
+from pydantic_extra_types.phone_numbers import PhoneNumber
 
 
 # Shared properties
@@ -48,7 +50,9 @@ class UpdatePassword(SQLModel):
 class User(UserBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     hashed_password: str
-    items: list["Item"] = Relationship(back_populates="owner")
+    phones: list["Phone"] = Relationship(back_populates="user")
+    emails: list["Email"] = Relationship(back_populates="user")
+    organization: Optional["Organization"] = Relationship(back_populates="members")
 
 
 # Properties to return via API, id is always required
@@ -61,39 +65,39 @@ class UsersOut(SQLModel):
     count: int
 
 
-# Shared properties
-class ItemBase(SQLModel):
-    title: str
-    description: str | None = None
+# # Shared properties
+# class ItemBase(SQLModel):
+#     title: str
+#     description: str | None = None
 
 
-# Properties to receive on item creation
-class ItemCreate(ItemBase):
-    title: str
+# # Properties to receive on item creation
+# class ItemCreate(ItemBase):
+#     title: str
 
 
-# Properties to receive on item update
-class ItemUpdate(ItemBase):
-    title: str | None = None  # type: ignore
+# # Properties to receive on item update
+# class ItemUpdate(ItemBase):
+#     title: str | None = None  # type: ignore
 
 
-# Database model, database table inferred from class name
-class Item(ItemBase, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    title: str
-    owner_id: int | None = Field(default=None, foreign_key="user.id", nullable=False)
-    owner: User | None = Relationship(back_populates="items")
+# # Database model, database table inferred from class name
+# class Item(ItemBase, table=True):
+#     id: int | None = Field(default=None, primary_key=True)
+#     title: str
+#     owner_id: int | None = Field(default=None, foreign_key="user.id", nullable=False)
+#     owner: User | None = Relationship(back_populates="items")
 
 
-# Properties to return via API, id is always required
-class ItemOut(ItemBase):
-    id: int
-    owner_id: int
+# # Properties to return via API, id is always required
+# class ItemOut(ItemBase):
+#     id: int
+#     owner_id: int
 
 
-class ItemsOut(SQLModel):
-    data: list[ItemOut]
-    count: int
+# class ItemsOut(SQLModel):
+#     data: list[ItemOut]
+#     count: int
     
 # ------------------------ Organization Models  ------------------------------------
     
@@ -120,10 +124,10 @@ class Organization(OrganizationBase, table=True):
     owner_id: int | None = Field(default=None, foreign_key="user.id", nullable=False)
     #Non DB fields Useful for Pydantic/FastAPI/SQLModel    
     # addresses: list[Address] = Relationship(back_populates="organization")
-    # emails: list[Email] = Relationship(back_populates="organization")
-    # phones: list[Phone] = Relationship(back_populates="organization")
-    # salespeople: list[SalesPerson] = Relationship(back_populates="organization")
-    # owned_vehicles: list[Vehicle] = Relationship(back_populates="organization")
+    emails: list["Email"] = Relationship(back_populates="organization")
+    phones: list["Phone"] = Relationship(back_populates="organization")
+    members: list[User] = Relationship(back_populates="organization")
+    owned_vehicles: list["Vehicle"] = Relationship(back_populates="organization")
     
 
 # class OrganizationReadwithSalesPeople(OrganizationRead):
@@ -149,7 +153,7 @@ class VehicleBase(SQLModel):
 
 
 class VehicleCreate(VehicleBase):
-    pass
+    organization_id: Optional[int] = None
 
 class VehicleUpdate(VehicleBase):
     pass
@@ -171,13 +175,41 @@ class Vehicle(VehicleBase, table=True):
     # prospect_id: Optional[int] = Field(default=None, foreign_key="prospect.id")
     # prospect: Optional[Prospect] = Relationship(back_populates="owned_vehicles")
    
-    # organization_id: Optional[int] = Field(default=None, foreign_key="organization.id")
-    # organization: Optional[Organization] = Relationship(back_populates="owned_vehicles")
+    organization_id: Optional[int] = Field(default=None, foreign_key="organization.id")
+    organization: Optional[Organization] = Relationship(back_populates="owned_vehicles")
     
     # activity_id: Optional[int] = Field(default=None, foreign_key="activity.id")
     # activity: Optional[Activity] = Relationship(back_populates="recommended_vehicle")
+    
+# ------------------------ Phone Models  ------------------------------------
+class Phone(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    number: PhoneNumber
+    phone_type: PhoneType
+    is_primary: bool = False
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    user: Optional[User] = Relationship(back_populates="phones")
+    organization_id: Optional[int] = Field(default=None, foreign_key="organization.id")
+    organization: Optional["Organization"] = Relationship(back_populates="phones")
+    
+    #Non DB fields Useful for Pydantic/FastAPI/SQLModel    
+    # prospect_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    # prospect: Optional["Prospect"] = Relationship(back_populates="phones")
 
-
+# ------------------------ Email Models  ------------------------------------ 
+class Email(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email_address: Optional[str] = None
+    is_primary: Optional[bool] = None
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    user: Optional[User] = Relationship(back_populates="emails")
+    organization_id: Optional[int] = Field(default=None, foreign_key="organization.id")
+    organization: Optional["Organization"] = Relationship(back_populates="emails")
+    
+    # prospect_id: Optional[int] = Field(default=None, foreign_key="prospect.id")
+    # prospect: Optional["Prospect"] = Relationship(back_populates="emails")
+    
+    
 
 # Generic message
 class Message(SQLModel):
