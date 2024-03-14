@@ -11,11 +11,14 @@ from app.models import (
     User,
     UserCreate,
     UserUpdate,
+    Vehicle,
+    VehicleCreate,
+    VehicleUpdate,
 )
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
-    db_obj = User.model_validate(
+    db_obj: User = User.model_validate(
         user_create, update={"hashed_password": get_password_hash(user_create.password)}
     )
     session.add(db_obj)
@@ -67,3 +70,18 @@ def create_item(*, session: Session, item_in: ItemCreate, owner_id: int) -> Item
     session.commit()
     session.refresh(db_item)
     return db_item
+
+def create_vehicle(*, session: Session, vehicle_in: VehicleCreate, owner_id: int) -> Vehicle:
+    db_vehicle: Vehicle = Vehicle.model_validate(vehicle_in, update={"owner_id": owner_id})
+    session.add(db_vehicle)
+    session.commit()
+    session.refresh(db_vehicle)
+    return db_vehicle
+
+def get_vehicle_by_vin(*, session: Session, vin: str) -> Vehicle | None:
+    statement = select(Vehicle).where(Vehicle.vin == vin)
+    session_vehicle = session.exec(statement).first()
+    return session_vehicle
+
+
+

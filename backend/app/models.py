@@ -148,10 +148,10 @@ class VehicleBase(SQLModel):
     has_lien: Optional[bool] = None
 
 
-class VehicleCreate(ItemBase):
+class VehicleCreate(VehicleBase):
     pass
 
-class VehicleUpdate(ItemBase):
+class VehicleUpdate(VehicleBase):
     pass
 
 class VehicleOut(VehicleBase):

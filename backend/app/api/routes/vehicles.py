@@ -4,7 +4,8 @@ from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
-from app.models import Vehicle, VehicleCreate, VehicleOut, VehiclesOut, VehicleUpdate, Message
+from app import crud
+from app.models import Vehicle, VehicleCreate, VehicleOut, VehiclesOut, VehicleUpdate, Message, User
 
 router = APIRouter()
 
@@ -60,10 +61,17 @@ def create_vehicle(
     """
     Create new vehicle.
     """
-    vehicle = Vehicle.model_validate(vehicle_in, update={"owner_id": current_user.id})
-    session.add(vehicle)
-    session.commit()
-    session.refresh(vehicle)
+    vehicle: Vehicle | None = crud.get_vehicle_by_vin(session=session, vin=vehicle_in.vin)
+    user: User = crud.get_user_by_email(session=session, email=current_user.email)
+    if vehicle is not None:
+        raise HTTPException(status_code=400, detail=f"Vehicle with VIN {vehicle_in.vin} already exists")
+   
+    if current_user is None:
+        raise HTTPException(status_code=400, detail="User not found")
+    
+    
+    vehicle: Vehicle = crud.create_vehicle(session=session, vehicle_in=vehicle_in, owner_id=user.id)
+    
     return vehicle
 
 
