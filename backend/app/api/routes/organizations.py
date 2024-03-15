@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import func, select
@@ -15,6 +15,8 @@ from app.models import (
     OrganizationOut,
     OrganizationsOut,
     OrganizationUpdate,
+    Email, 
+    Phone
 )
 
 router = APIRouter()
@@ -66,14 +68,20 @@ def read_organization(session: SessionDep, current_user: CurrentUser, id: int) -
 
 @router.post("/", response_model=OrganizationOut)
 def create_organization(
-    *, session: SessionDep, current_user: CurrentUser, organization_in: OrganizationCreate
-) -> Any:
+    *, session: SessionDep, current_user: CurrentUser, organization_in: OrganizationCreate, email: Optional[str] = None
+) -> Organization:
     """
     Create new organization.
     """
-    organization = Organization.model_validate(organization_in, update={"owner_id": current_user.id})
+    organization: Organization = Organization.model_validate(organization_in, update={"owner_id": current_user.id})
     session.add(organization)
     session.commit()
+    session.refresh(organization)
+    if email is not None:
+        db_email: Email = Email(email_address=email, is_primary=True, organization_id=organization.id)
+        session.add(db_email)
+        session.commit()
+        session.refresh(db_email)
     session.refresh(organization)
     return organization
 

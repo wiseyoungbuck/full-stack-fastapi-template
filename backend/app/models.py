@@ -1,3 +1,4 @@
+from pydantic import ConfigDict
 from sqlmodel import Field, Relationship, SQLModel
 from typing import Optional
 from datetime import datetime
@@ -5,6 +6,8 @@ from datetime import datetime
 from .enums import FinancingType, PhoneType
 
 from pydantic_extra_types.phone_numbers import PhoneNumber
+
+from pydantic import ConfigDict
 
 
 # Shared properties
@@ -107,6 +110,7 @@ class OrganizationBase(SQLModel):
 
 
 class OrganizationCreate(OrganizationBase):
+    model_config = ConfigDict(extra='ignore')
     pass
 
 
@@ -123,6 +127,7 @@ class OrganizationOut(OrganizationBase):
 
 class OrganizationsOut(SQLModel):
     data: list[OrganizationOut]
+    count: int
 
 
 class Organization(OrganizationBase, table=True):
