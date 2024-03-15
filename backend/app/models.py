@@ -1,13 +1,12 @@
-from pydantic import ConfigDict
 from sqlmodel import Field, Relationship, SQLModel
 from typing import Optional
 from datetime import datetime
-
 from .enums import FinancingType, PhoneType
+from decimal import Decimal
+
 
 from pydantic_extra_types.phone_numbers import PhoneNumber
 
-from pydantic import ConfigDict
 
 
 # Shared properties
@@ -17,6 +16,8 @@ class UserBase(SQLModel):
     is_active: bool = True
     is_superuser: bool = False
     full_name: str | None = None
+    
+    pass
 
 
 # Properties to receive via API on creation
@@ -107,10 +108,12 @@ class UsersOut(SQLModel):
 
 class OrganizationBase(SQLModel):
     name: str
-
+    dealership: str
+    dealergroup: str
+    class Config:
+        extra = 'forbid' # TODO add this all models? or at least all Create Models
 
 class OrganizationCreate(OrganizationBase):
-    model_config = ConfigDict(extra='ignore')
     pass
 
 
@@ -122,12 +125,13 @@ class OrganizationOut(OrganizationBase):
     id: int
     # phones: list["Phone"]
     emails: list["Email"]
-    pass
 
 
 class OrganizationsOut(SQLModel):
     data: list[OrganizationOut]
     count: int
+    class Config:
+        extra = 'forbid' # TODO add this all models? or at least all Create Models
 
 
 class Organization(OrganizationBase, table=True):
@@ -156,9 +160,12 @@ class VehicleBase(SQLModel):
     year: Optional[int] = None
     color: Optional[str] = None
     mileage: Optional[int] = None
-    price: Optional[float] = None
+    price: Decimal = Field(default=0, max_digits=15, decimal_places=2)
     msrp: Optional[float] = None
     has_lien: Optional[bool] = None
+    
+    class Config:
+        extra = 'forbid' # TODO add this all models? or at least all Create Models
 
 
 class VehicleCreate(VehicleBase):
@@ -176,6 +183,8 @@ class VehicleOut(VehicleBase):
 class VehiclesOut(SQLModel):
     data: list[VehicleOut]
     count: int
+    class Config:
+        extra = 'forbid' # TODO add this all models? or at least all Create Models
 
 
 # Database model
@@ -196,7 +205,10 @@ class Vehicle(VehicleBase, table=True):
 
 
 # ------------------------ Phone Models  ------------------------------------
-class Phone(SQLModel, table=True):
+class PhoneBase(SQLModel):
+    class Config:
+        extra = 'forbid' # TODO add this all models? or at least all Create Models
+class Phone(PhoneBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     number: PhoneNumber
     phone_type: PhoneType
@@ -212,10 +224,14 @@ class Phone(SQLModel, table=True):
 
 
 # ------------------------ Email Models  ------------------------------------
-class Email(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+class EmailBase(SQLModel):
     email_address: Optional[str] = None
     is_primary: Optional[bool] = None
+    class Config:
+        extra = 'forbid' # TODO add this all models? or at least all Create Models
+        
+class Email(EmailBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(default=None, foreign_key="user.id")
     user: Optional[User] = Relationship(back_populates="emails")
     organization_id: Optional[int] = Field(default=None, foreign_key="organization.id")
@@ -223,6 +239,7 @@ class Email(SQLModel, table=True):
 
     # prospect_id: Optional[int] = Field(default=None, foreign_key="prospect.id")
     # prospect: Optional["Prospect"] = Relationship(back_populates="emails")
+    
 
 
 # Generic message
