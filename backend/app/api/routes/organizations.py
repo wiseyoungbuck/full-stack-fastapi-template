@@ -1,18 +1,29 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import func, select
 
-from app.api.deps import CurrentUser, SessionDep
-from app.models import Organization, OrganizationCreate, OrganizationOut, OrganizationsOut, OrganizationUpdate, Message
+from app.api.deps import (
+    CurrentUser,
+    SessionDep,
+    get_current_active_superuser,
+)
+from app.models import (
+    Message,
+    Organization,
+    OrganizationCreate,
+    OrganizationOut,
+    OrganizationsOut,
+    OrganizationUpdate,
+)
 
 router = APIRouter()
 
 
-@router.get("/", response_model=OrganizationsOut)
+@router.get("/", dependencies=[Depends(get_current_active_superuser)], response_model=OrganizationsOut)
 def read_organizations(
     session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
-) -> Any:
+) -> OrganizationsOut:
     """
     Retrieve organizations.
     """

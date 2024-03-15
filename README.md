@@ -164,3 +164,13 @@ Check the file [release-notes.md](./release-notes.md).
 ## License
 
 The Full Stack FastAPI Template is licensed under the terms of the MIT license.
+
+
+
+docker compose exec backend bash
+
+
+## inside containers
+
+alembic revision --autogenerate -m "create email table"
+alembic upgrade head
